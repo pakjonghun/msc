@@ -1,8 +1,8 @@
-import RootStore from "..";
 import { reaction } from "mobx";
 import Circle from "./Circle";
 import { getRandomColor, getRandomNum } from "./UIHelper";
 import GameStore from "../GameStore";
+import { CIRCLE, DASHBOARD } from "../../model/constants";
 
 export class CircleFactory {
   left = getRandomNum(0, window.innerWidth);
@@ -10,35 +10,42 @@ export class CircleFactory {
   fill: string;
   size = 500;
   coefficient: number;
+  gameStore: GameStore;
 
   constructor(gameStore: GameStore) {
+    this.gameStore = gameStore;
     this.fill = getRandomColor(0, 255);
     this.coefficient = gameStore.stage;
     reaction(
       () => gameStore.stage,
       (cur) => {
-        console.log(cur);
-        this.coefficient = cur * 20;
+        this.coefficient = cur * 0.03;
       }
     );
   }
 
-  private getSize() {
-    return getRandomNum(
-      30,
-      this.size * this.coefficient < 30 ? 30 : this.size * this.coefficient
-    );
+  makeCircle(circleID: string) {
+    const size =
+      this.gameStore.stage === 1
+        ? CIRCLE.RADIUS
+        : CIRCLE.RADIUS - CIRCLE.RADIUS * this.coefficient;
+    const radius = size > CIRCLE.MINRADIUS ? size : CIRCLE.MINRADIUS;
+    const left = this.getPosition(radius, DASHBOARD.WIDTH);
+    const top = this.getPosition(radius, DASHBOARD.HEIGHT);
+    return new Circle(circleID, {
+      left,
+      top,
+      backgroundColor: getRandomColor(0, 255),
+      fill: getRandomColor(0, 255),
+      radius,
+      width: radius,
+      height: radius,
+    });
   }
 
-  makeCircle(circleID: string) {
-    const size = this.coefficient;
-    return new Circle(circleID, {
-      left: getRandomNum(0, window.innerWidth),
-      top: getRandomNum(0, window.innerHeight),
-      backgroundColor: getRandomColor(0, 255),
-      width: size,
-      height: size,
-    });
+  private getPosition(radius: number, maxSize: number) {
+    const size = getRandomNum(0, maxSize);
+    return size < maxSize / 2 ? size + radius * 2 : size - radius * 2;
   }
 }
 

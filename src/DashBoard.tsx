@@ -24,8 +24,9 @@ const DashBoard = () => {
 
     if (!canvas) return;
     timer = setInterval(() => {
-      const circle = circleStore.findByID(getID());
-      canvas.add(circle);
+      const circle1 = circleStore.findByID(getID());
+      const circle2 = circleStore.findByID(getID());
+      canvas.add(circle1, circle2);
       canvas.renderAll();
     }, 2000);
 

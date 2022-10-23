@@ -1,4 +1,5 @@
 import { fabric } from "fabric";
+import { DASHBOARD } from "../../model/constants";
 
 class CanvasFactory {
   backgroundColor = "green";
@@ -6,8 +7,8 @@ class CanvasFactory {
   height: number;
 
   constructor() {
-    this.width = window.innerHeight;
-    this.height = window.innerWidth;
+    this.width = DASHBOARD.WIDTH;
+    this.height = DASHBOARD.HEIGHT;
   }
 
   makeCanvas(canvasID: string) {
