@@ -4,6 +4,8 @@ import { CANVAS_ID } from './model/constants';
 import RootStore from './store';
 import { getID } from './store/Common/Helper';
 import { fabric } from 'fabric';
+import { DragObserver, Subject } from './DragObserver';
+import { PubSub } from './Pubsub';
 
 const DashBoard = () => {
   const gameStore = useLocalObservable(() => RootStore.GameStore);
@@ -15,82 +17,50 @@ const DashBoard = () => {
     setCanvas(canvasStore.findByID(CANVAS_ID));
   }, [canvasStore]);
 
-  const onClick = () => {
-    const img = document.getElementById('img') as HTMLImageElement;
-    fabric.Object.prototype.transparentCorners = false;
-    fabric.Object.prototype.cornerColor = 'blue';
-    fabric.Object.prototype.cornerStyle = 'circle';
+  useEffect(() => {
+    if (!canvas) return;
 
-    fabric.Object.prototype.setControlVisible('tl', false);
-    fabric.Object.prototype.setControlVisible('tr', false);
-    fabric.Object.prototype.setControlVisible('bl', false);
-    fabric.Object.prototype.setControlVisible('br', false);
-    fabric.Object.prototype.setControlVisible('ml', false);
-    fabric.Object.prototype.setControlVisible('mb', false);
-    fabric.Object.prototype.setControlVisible('mr', false);
-    fabric.Object.prototype.setControlVisible('mt', false);
-    fabric.Object.prototype.setControlVisible('mtr', false);
+    const pin1 = new Subject({
+      width: 50,
+      height: 50,
+      radius: 25,
+      stroke: 'black',
+      type: 'pin1',
+    });
 
-    if (canvas) {
-      const rect = new fabric.Rect({
-        left: 100,
-        top: 100,
-        width: 200,
-        height: 200,
-        fill: 'yellow',
-        objectCaching: false,
-        stroke: 'lightgrey',
-        strokeWidth: 4,
-      });
+    const pin2 = new Subject({
+      width: 50,
+      height: 50,
+      radius: 25,
+      left: 100,
+      top: 500,
+      stroke: 'black',
+      type: 'pin2',
+    });
 
-      // rect.hasControls = rect.hasBorders = false;
-      canvas.add(rect);
-
-      fabric.Object.prototype.controls.deleteControl = new fabric.Control({
-        x: 0.5,
-        y: -0.5,
-        // offsetY: 50,
-        cursorStyle: 'pointer',
-        mouseUpHandler(eventData, transformData, x, y) {
-          const t = transformData.target;
-
-          if (t) {
-            t?.canvas?.remove(t);
-            t?.canvas?.renderAll();
+    const pubsub = new PubSub();
+    canvas.on('object:moving', (e) => {
+      if (e.target) {
+        canvas.forEachObject((o) => {
+          if (o === e.target) return;
+          const subject = e.target as Subject;
+          if (o.intersectsWithObject(subject)) {
+            pubsub.publish('dragover', {
+              target: subject.type,
+              intersect: o.type,
+            });
           }
-          return true;
-        },
+        });
+      }
+    });
 
-        render(ctx, left, top, styleOverride, fabricObject) {
-          ctx.save();
-          ctx.translate(left, top);
+    pubsub.subscribe('dragover', (data: any) => console.log(data));
 
-          ctx.drawImage(img, -50, -50, 100, 100);
-          ctx.restore();
-        },
-      });
-
-      // const imgEle = new fabric.Image(img, {
-      //   left: 100,
-      //   top: 100,
-      // });
-      // fabric.Image.fromURL(imgPath, function (imgEle) {
-      //   canvas.add(imgEle);
-      // });
-    }
-  };
+    canvas.add(pin1, pin2);
+  }, [canvas]);
 
   return (
     <div>
-      <img id="img" src={imgPath} alt="icon" />
-      <button
-        onClick={() => {
-          alert('hi');
-        }}
-      >
-        hihiButton
-      </button>
-      <button onClick={onClick}>click</button>
       <canvas id={CANVAS_ID} />
     </div>
   );
